@@ -37,3 +37,14 @@ root.attributes.put("location", "山东")
 let xmlString = root.toXmlString()
 println(xmlString)
 ```
+使用 DSL 构建 XML
+```cangjie
+// 当前仓颉还不支持像 Kotlin 一样做成隐式的，所以不得不添加一个参数
+let node = xml("root") { root =>
+    root.node("sub") { sub =>
+        sub.attr("key", "value")
+        sub.text("content")
+    }
+}
+println(node.toXmlString())
+```

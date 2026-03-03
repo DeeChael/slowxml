@@ -3,7 +3,7 @@
   name = "slowxml"
   organization = ""
   description = "nothing here"
-  version = "1.0.0"
+  version = "1.0.1"
   target-dir = ""
   script-dir = ""
   output-type = "static"
