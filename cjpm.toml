@@ -3,7 +3,7 @@
   name = "slowxml"
   organization = ""
   description = "nothing here"
-  version = "1.0.1"
+  version = "1.0.2"
   target-dir = ""
   script-dir = ""
   output-type = "static"
@@ -15,5 +15,6 @@
   repository = "https://www.github.com/DeeChael/slowxml"
   license = ["MIT"]
   include = ["src"]
+  exclude = ["src/test"]
 
 [dependencies]

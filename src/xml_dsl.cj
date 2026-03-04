@@ -15,10 +15,6 @@ extend XmlElementNode {
         return child
     }
 
-    public func attr(key: String, value: String) {
-        this.attributes[key] = value
-    }
-
     public func text(content: String) {
         this.children.add(XmlTextNode(content))
     }

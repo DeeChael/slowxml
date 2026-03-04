@@ -1,0 +1,98 @@
+package slowxml.test
+
+import slowxml.*
+import std.unittest.*
+import std.unittest.testmacro.*
+
+/* ===== Emitted by MacroCall @Test in selector_test.cj:7:1 ===== */
+/* 7.1 */@Attribute[TEST_GENERATED] class TestCase_testSelector <: TestClass {
+/* 7.2 */    public override func asTestSuite(): TestSuite {
+/* 7.3 */        
+/* 7.4 */        let suiteConfiguration = classConfiguration()
+/* 7.5 */        let suiteBuilder = TestSuite.builder("TestCase_testSelector").configure(suiteConfiguration)
+/* 7.6 */        
+/* 7.7 */        { => let caseConfig = Configuration()
+/* 7.8 */            caseConfig.set(KeyFromTopLevel.fromTopLevel, true)
+/* 7.9 */            
+/* 7.10 */            let testSelectorTestFunc = { => testSelector();() }
+/* 7.11 */            suiteBuilder.add(
+/* 7.12 */            UnitTestCase.create(
+/* 7.13 */            "testSelector",
+/* 7.14 */            configuration: caseConfig,
+/* 7.15 */            body: testSelectorTestFunc
+/* 7.16 */            )
+/* 7.17 */            )
+/* 7.18 */            
+/* 7.19 */        }()
+/* 7.20 */        
+/* 7.21 */        return suiteBuilder.build()
+/* 7.22 */    }
+/* 7.23 */    init() {
+/* 7.24 */    }
+/* 7.25 */    private func classConfiguration(): Configuration {
+/* 7.26 */        let configuration = Configuration()
+/* 7.27 */        configuration.set(KeyFromTopLevel.fromTopLevel, true)
+/* 7.28 */        
+/* 7.29 */        return configuration
+/* 7.30 */    }
+/* 7.31 */    private func inheritedFromClassAnnotatedByTestTemplate < T >(): TestSuite where T <: TestClass {
+/* 7.32 */        throw Exception("Unreachable code")
+/* 7.33 */    }
+/* 7.34 */}
+/* 7.35 */func testSelector() {
+/* 7.36 */    let viewXml = """
+    <UIContainer id="root_view">
+        <AppBar title="Settings">
+            <IconButton id="back_btn" class="icon primary" />
+        </AppBar>
+
+        <List class="settings-list">
+            <ListItem class="item">
+                <Text class="label">Wi-Fi</Text>
+                <Status class="active">Connected</Status>
+            </ListItem>
+
+            <ListItem class="item disabled">
+                <Text class="label">Bluetooth</Text>
+                <Status>Off</Status>
+            </ListItem>
+
+            <Footer>
+                <Text class="copyright">Version 1.0.0</Text>
+            </Footer>
+        </List>
+    </UIContainer>
+    """
+/* 7.37 */    
+/* 7.38 */    let root = XmlParser(viewXml).parse().getOrThrow()
+/* 7.39 */    
+/* 7.40 */    let backBtn = root.select("#back_btn")
+/* 7.41 */    expectEqual("backBtn?.attr(\"class\")", "\"icon primary\"", backBtn?.attr("class"), "icon primary", isDelta: false,)
+/* 7.42 */    
+/* 7.43 */    let activeStatus = root.select(".settings-list .active")
+/* 7.44 */    expectEqual("activeStatus?.innerText", "\"Connected\"", activeStatus?.innerText, "Connected", isDelta: false,)
+/* 7.45 */    
+/* 7.46 */    let disabledItems = root.selectAll("ListItem.disabled")
+/* 7.47 */    for(item in disabledItems) {
+/* 7.48 */        expectEqual("item.getElementsByTagName(\"Text\")[0].innerText", "\"Bluetooth\"", item.getElementsByTagName("Text")[0].innerText, "Bluetooth", isDelta: false,)
+/* 7.49 */    }
+/* 7.50 */    
+/* 7.51 */    let version = root.select("List > Footer > Text")
+/* 7.52 */    expectEqual("version?.innerText", "\"Version 1.0.0\"", version?.innerText, "Version 1.0.0", isDelta: false,)
+/* 7.53 */    
+/* 7.54 */    let allLabels = root.selectAll(".label")
+/* 7.55 */    expectEqual("allLabels.size", "2", allLabels.size, 2, isDelta: false,)
+/* 7.56 */}
+/* 7.57 */
+/* 7.58 */
+/* 7.59 */interface TestPackageExtension_TestCase_testSelector {
+/* 7.60 */    func registerTestCase_testSelector(): Unit
+/* 7.61 */}
+/* 7.62 */extend TestPackage <: TestPackageExtension_TestCase_testSelector {
+/* 7.63 */    @Attribute[TEST_REGISTER]
+/* 7.64 */    public func registerTestCase_testSelector() {
+/* 7.65 */        registerSuite({ => TestCase_testSelector().asTestSuite() })
+/* 7.66 */    }
+/* 7.67 */}
+/* 7.68 */
+/* ===== End of the Emit ===== */

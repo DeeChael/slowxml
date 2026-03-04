@@ -1,0 +1,128 @@
+package slowxml.test
+
+import slowxml.*
+import std.unittest.*
+import std.unittest.testmacro.*
+
+/* ===== Emitted by MacroCall @Test in xml_test.cj:7:1 ===== */
+/* 7.1 */@Attribute[TEST_GENERATED] class TestCase_testHeaderAndComments <: TestClass {
+/* 7.2 */    public override func asTestSuite(): TestSuite {
+/* 7.3 */        
+/* 7.4 */        let suiteConfiguration = classConfiguration()
+/* 7.5 */        let suiteBuilder = TestSuite.builder("TestCase_testHeaderAndComments").configure(suiteConfiguration)
+/* 7.6 */        
+/* 7.7 */        { => let caseConfig = Configuration()
+/* 7.8 */            caseConfig.set(KeyFromTopLevel.fromTopLevel, true)
+/* 7.9 */            
+/* 7.10 */            let testHeaderAndCommentsTestFunc = { => testHeaderAndComments();() }
+/* 7.11 */            suiteBuilder.add(
+/* 7.12 */            UnitTestCase.create(
+/* 7.13 */            "testHeaderAndComments",
+/* 7.14 */            configuration: caseConfig,
+/* 7.15 */            body: testHeaderAndCommentsTestFunc
+/* 7.16 */            )
+/* 7.17 */            )
+/* 7.18 */            
+/* 7.19 */        }()
+/* 7.20 */        
+/* 7.21 */        return suiteBuilder.build()
+/* 7.22 */    }
+/* 7.23 */    init() {
+/* 7.24 */    }
+/* 7.25 */    private func classConfiguration(): Configuration {
+/* 7.26 */        let configuration = Configuration()
+/* 7.27 */        configuration.set(KeyFromTopLevel.fromTopLevel, true)
+/* 7.28 */        
+/* 7.29 */        return configuration
+/* 7.30 */    }
+/* 7.31 */    private func inheritedFromClassAnnotatedByTestTemplate < T >(): TestSuite where T <: TestClass {
+/* 7.32 */        throw Exception("Unreachable code")
+/* 7.33 */    }
+/* 7.34 */}
+/* 7.35 */func testHeaderAndComments() {
+/* 7.36 */    let dirtyXml = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE html>
+    <App>
+        <meta>data</meta>
+        <content>Hello</content>
+    </App>
+    """
+/* 7.37 */    let root = XmlParser(dirtyXml).parse().getOrThrow()
+/* 7.38 */    
+/* 7.39 */    expectEqual("root.name", "\"App\"", root.name, "App", isDelta: false,)
+/* 7.40 */    expectEqual("root.getElementsByTagName(\"content\", recursive: false).size", "1", root.getElementsByTagName("content", recursive: false).size, 1, isDelta: false,)
+/* 7.41 */    expectEqual("root.getElementsByTagName(\"content\")[0].innerText", "\"Hello\"", root.getElementsByTagName("content")[0].innerText, "Hello", isDelta: false,)
+/* 7.42 */}
+/* 7.43 */
+/* 7.44 */
+/* 7.45 */interface TestPackageExtension_TestCase_testHeaderAndComments {
+/* 7.46 */    func registerTestCase_testHeaderAndComments(): Unit
+/* 7.47 */}
+/* 7.48 */extend TestPackage <: TestPackageExtension_TestCase_testHeaderAndComments {
+/* 7.49 */    @Attribute[TEST_REGISTER]
+/* 7.50 */    public func registerTestCase_testHeaderAndComments() {
+/* 7.51 */        registerSuite({ => TestCase_testHeaderAndComments().asTestSuite() })
+/* 7.52 */    }
+/* 7.53 */}
+/* 7.54 */
+/* ===== End of the Emit ===== */
+
+/* ===== Emitted by MacroCall @Test in xml_test.cj:24:1 ===== */
+/* 24.1 */@Attribute[TEST_GENERATED] class TestCase_testMixedContent <: TestClass {
+/* 24.2 */    public override func asTestSuite(): TestSuite {
+/* 24.3 */        
+/* 24.4 */        let suiteConfiguration = classConfiguration()
+/* 24.5 */        let suiteBuilder = TestSuite.builder("TestCase_testMixedContent").configure(suiteConfiguration)
+/* 24.6 */        
+/* 24.7 */        { => let caseConfig = Configuration()
+/* 24.8 */            caseConfig.set(KeyFromTopLevel.fromTopLevel, true)
+/* 24.9 */            
+/* 24.10 */            let testMixedContentTestFunc = { => testMixedContent();() }
+/* 24.11 */            suiteBuilder.add(
+/* 24.12 */            UnitTestCase.create(
+/* 24.13 */            "testMixedContent",
+/* 24.14 */            configuration: caseConfig,
+/* 24.15 */            body: testMixedContentTestFunc
+/* 24.16 */            )
+/* 24.17 */            )
+/* 24.18 */            
+/* 24.19 */        }()
+/* 24.20 */        
+/* 24.21 */        return suiteBuilder.build()
+/* 24.22 */    }
+/* 24.23 */    init() {
+/* 24.24 */    }
+/* 24.25 */    private func classConfiguration(): Configuration {
+/* 24.26 */        let configuration = Configuration()
+/* 24.27 */        configuration.set(KeyFromTopLevel.fromTopLevel, true)
+/* 24.28 */        
+/* 24.29 */        return configuration
+/* 24.30 */    }
+/* 24.31 */    private func inheritedFromClassAnnotatedByTestTemplate < T >(): TestSuite where T <: TestClass {
+/* 24.32 */        throw Exception("Unreachable code")
+/* 24.33 */    }
+/* 24.34 */}
+/* 24.35 */func testMixedContent() {
+/* 24.36 */    let mixedXml = "<root>TextA<child/>TextB</root>"
+/* 24.37 */    let root = XmlParser(mixedXml).parse().getOrThrow()
+/* 24.38 */    
+/* 24.39 */    expectEqual("root.children.size", "3", root.children.size, 3, isDelta: false,)
+/* 24.40 */    expectEqual("root.children[0] is XmlTextNode", "true", root.children[0] is XmlTextNode, true, isDelta: false,)
+/* 24.41 */    expectEqual("root.children[1] is XmlElementNode", "true", root.children[1] is XmlElementNode, true, isDelta: false,)
+/* 24.42 */    expectEqual("root.children[2] is XmlTextNode", "true", root.children[2] is XmlTextNode, true, isDelta: false,)
+/* 24.43 */    expectEqual("root.innerText", "\"TextATextB\"", root.innerText, "TextATextB", isDelta: false,)
+/* 24.44 */}
+/* 24.45 */
+/* 24.46 */
+/* 24.47 */interface TestPackageExtension_TestCase_testMixedContent {
+/* 24.48 */    func registerTestCase_testMixedContent(): Unit
+/* 24.49 */}
+/* 24.50 */extend TestPackage <: TestPackageExtension_TestCase_testMixedContent {
+/* 24.51 */    @Attribute[TEST_REGISTER]
+/* 24.52 */    public func registerTestCase_testMixedContent() {
+/* 24.53 */        registerSuite({ => TestCase_testMixedContent().asTestSuite() })
+/* 24.54 */    }
+/* 24.55 */}
+/* 24.56 */
+/* ===== End of the Emit ===== */
