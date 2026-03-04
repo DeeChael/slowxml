@@ -75,6 +75,10 @@ public class XmlElementNode <: XmlNode {
         attributes.get(key).getOrDefault { "" }
     }
 
+    public func attr(key: String, value: String) {
+        attributes[key] = value
+    }
+
     public override func toXmlString(): String {
         return this.toXmlString(0)
     }
