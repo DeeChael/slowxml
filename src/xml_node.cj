@@ -40,7 +40,7 @@ public class XmlTextNode <: XmlNode {
         return _content
     }
 
-    public override func toXmlString(indent: Int64): String {
+    public override func toXmlString(_: Int64): String {
         return _content
     }
 

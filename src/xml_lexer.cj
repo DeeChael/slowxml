@@ -116,7 +116,10 @@ public class XmlLexer {
 
     private func readIdentifier(): String {
         let sb = StringBuilder()
-        while (!isEOF() && isXmlIdentifierPart(peek())) {
+        while (!isEOF()) {
+            if (!isXmlIdentifierPart(peek())) {
+                break
+            }
             sb.append(consume())
         }
         return sb.toString()
@@ -124,7 +127,10 @@ public class XmlLexer {
 
     private func readTextContent(): String {
         let sb = StringBuilder()
-        while (!isEOF() && peek() != r'<') {
+        while (!isEOF()) {
+            if (peek() == r'<') {
+                break
+            }
             sb.append(consume())
         }
         return sb.toString()
@@ -132,7 +138,10 @@ public class XmlLexer {
 
     private func readUntil(target: Rune): String {
         let sb = StringBuilder()
-        while (!isEOF() && peek() != target) {
+        while (!isEOF()) {
+            if (peek() == target) {
+                break
+            }
             sb.append(consume())
         }
         if (!isEOF()) {
@@ -142,7 +151,11 @@ public class XmlLexer {
     }
 
     private func skipWhitespace() {
-        while (!isEOF() && (peek() == r' ' || peek() == r'\n' || peek() == r'\r' || peek() == r'\t')) {
+        while (!isEOF()) {
+            let peeked = peek()
+            if (!(peeked == r' ' || peeked == r'\n' || peeked == r'\r' || peeked == r'\t')) {
+                break
+            }
             consume()
         }
     }

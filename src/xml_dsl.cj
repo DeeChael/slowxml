@@ -15,7 +15,7 @@ extend XmlElementNode {
         return child
     }
 
-    public func text(content: String) {
+    public func text(content: String): Unit {
         this.children.add(XmlTextNode(content))
     }
 
