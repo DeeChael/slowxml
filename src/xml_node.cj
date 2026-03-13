@@ -56,7 +56,7 @@ public func unescapeXmlText(text: String): String {
     return result
 }
 
-public abstract class XmlNode <: ToString {
+public abstract class XmlNode <: ToString & Equatable<XmlNode> {
 
     public prop innerText: String
 
@@ -97,6 +97,14 @@ public class XmlTextNode <: XmlNode {
         return toXmlString()
     }
 
+    public override operator func ==(another: XmlNode): Bool {
+        if (!(another is XmlTextNode)) {
+            return false
+        }
+        let node = another as XmlTextNode
+        return this._content == node.getOrThrow()._content
+    }
+
 }
 
 public class XmlCommentNode <: XmlNode {
@@ -126,6 +134,14 @@ public class XmlCommentNode <: XmlNode {
     public override func toXmlString(indent: Int64): String {
         let space = "  " * indent
         return "${space}<!-- ${_content} -->\n"
+    }
+
+    public override operator func ==(another: XmlNode): Bool {
+        if (!(another is XmlCommentNode)) {
+            return false
+        }
+        let node = another as XmlCommentNode
+        return this._content == node.getOrThrow()._content
     }
 
 }
@@ -189,6 +205,14 @@ public class XmlDeclNode <: XmlNode {
         return sb.toString()
     }
 
+    public override operator func ==(another: XmlNode): Bool {
+        if (!(another is XmlDeclNode)) {
+            return false
+        }
+        let node = (another as XmlDeclNode).getOrThrow()
+        return this._version == node._version && this._encoding == node._encoding && this._standalone == node._standalone
+    }
+
 }
 
 public class XmlDocTypeNode <: XmlNode {
@@ -220,9 +244,17 @@ public class XmlDocTypeNode <: XmlNode {
         return "${space}<!DOCTYPE ${_content}>\n"
     }
 
+    public override operator func ==(another: XmlNode): Bool {
+        if (!(another is XmlDocTypeNode)) {
+            return false
+        }
+        let node = (another as XmlDocTypeNode).getOrThrow()
+        return this._content == node._content
+    }
+
 }
 
-public class XmlDocument <: ToString {
+public class XmlDocument <: ToString & Equatable<XmlDocument> {
 
     protected var rootElement: XmlElementNode
     public var decl: ?XmlDeclNode = None
@@ -265,6 +297,27 @@ public class XmlDocument <: ToString {
 
     public override func toString(): String {
         return toXmlString()
+    }
+
+    public override operator func ==(another: XmlDocument): Bool {
+        if (this.rootElement != another.rootElement) {
+            return false
+        }
+        if (this.decl.isSome() && another.decl.isSome()) {
+            if (this.decl.getOrThrow() != another.decl.getOrThrow()) {
+                return false
+            }
+        } else if (this.decl.isSome() || another.decl.isSome()) {
+            return false
+        }
+        if (this.docType.isSome() && another.docType.isSome()) {
+            if (this.docType.getOrThrow() != another.docType.getOrThrow()) {
+                return false
+            }
+        } else if (this.docType.isSome() || another.docType.isSome()) {
+            return false
+        }
+        return true
     }
 
 }
@@ -700,6 +753,36 @@ public class XmlElementNode <: XmlNode {
                     this.children.add(child)
                 }
                 return true
+            }
+        }
+        return false
+    }
+
+    public override operator func ==(another: XmlNode): Bool {
+        if (!(another is XmlElementNode)) {
+            return false
+        }
+        let node = (another as XmlElementNode).getOrThrow()
+        if (this._name != node._name) {
+            return false
+        }
+        if (this.attributes.size != node.attributes.size) {
+            return false
+        }
+        if (this.children.size != node.children.size) {
+            return false
+        }
+        for (key in this.attributes.keys()) {
+            if (!node.attributes.contains(key)) {
+                return false
+            }
+            if (this.attr(key) != node.attr(key)) {
+                return false
+            }
+        }
+        for (child in this.children) {
+            if (!node.children.any { it => it == child }) {
+                return false
             }
         }
         return false
