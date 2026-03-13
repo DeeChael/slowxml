@@ -6,6 +6,9 @@ public enum XmlToken {
     | AttrName(String)
     | AttrValue(String)
     | Text(String)
+    | Comment(String)
+    | Header(String)
+    | DocType(String)
     | Skipable
     | SelfClosing
     | TagEnd

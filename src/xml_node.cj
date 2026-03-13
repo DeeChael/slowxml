@@ -3,6 +3,59 @@ package slowxml
 import std.collection.*
 import std.unicode.UnicodeStringExtension
 
+public func escapeXmlText(text: String): String {
+    let sb = StringBuilder()
+    let lt = Rune(0x3c)
+    let gt = Rune(0x3e)
+    let amp = Rune(0x26)
+    let quot = Rune(0x22)
+    let apos = Rune(0x27)
+    let semi = Rune(0x3b)
+    for (c in text.toRuneArray()) {
+        if (c == lt) {
+            sb.append(amp)
+            sb.append("lt")
+            sb.append(semi)
+        } else if (c == gt) {
+            sb.append(amp)
+            sb.append("gt")
+            sb.append(semi)
+        } else if (c == amp) {
+            sb.append(amp)
+            sb.append("amp")
+            sb.append(semi)
+        } else if (c == quot) {
+            sb.append(amp)
+            sb.append("quot")
+            sb.append(semi)
+        } else if (c == apos) {
+            sb.append(amp)
+            sb.append("apos")
+            sb.append(semi)
+        } else {
+            sb.append(c)
+        }
+    }
+    return sb.toString()
+}
+
+public func unescapeXmlText(text: String): String {
+    var result = text
+    let amp = Rune(0x26).toString()
+    let lt = Rune(0x3c).toString()
+    let gt = Rune(0x3e).toString()
+    let quot = Rune(0x22).toString()
+    let apos = Rune(0x27).toString()
+    let semi = Rune(0x3b).toString()
+    
+    result = result.replace("${amp}lt${semi}", lt)
+    result = result.replace("${amp}gt${semi}", gt)
+    result = result.replace("${amp}amp${semi}", amp)
+    result = result.replace("${amp}quot${semi}", quot)
+    result = result.replace("${amp}apos${semi}", apos)
+    return result
+}
+
 public abstract class XmlNode <: ToString {
 
     public prop innerText: String
@@ -37,11 +90,161 @@ public class XmlTextNode <: XmlNode {
     }
 
     public override func toXmlString(): String {
-        return _content
+        return escapeXmlText(_content)
     }
 
     public override func toXmlString(_: Int64): String {
-        return _content
+        return toXmlString()
+    }
+
+}
+
+public class XmlCommentNode <: XmlNode {
+
+    private let _content: String
+    
+    public prop content: String {
+        get() {
+            return this._content
+        }
+    }
+    
+    public override prop innerText: String {
+        get() {
+            return ""
+        }
+    }
+
+    public init(content: String) {
+        this._content = content.trimAscii()
+    }
+
+    public override func toXmlString(): String {
+        return "<!-- ${_content} -->"
+    }
+
+    public override func toXmlString(indent: Int64): String {
+        let space = "  " * indent
+        return "${space}<!-- ${_content} -->\n"
+    }
+
+}
+
+public class XmlHeaderNode <: XmlNode {
+
+    private let _content: String
+    public let attributes: HashMap<String, String> = HashMap<String, String>()
+    
+    public prop content: String {
+        get() {
+            return this._content
+        }
+    }
+    
+    public override prop innerText: String {
+        get() {
+            return ""
+        }
+    }
+
+    public init(content: String) {
+        this._content = content
+    }
+
+    public func attr(key: String): String {
+        attributes.get(key).getOrDefault { "" }
+    }
+
+    public func attr(key: String, value: String) {
+        attributes[key] = value
+    }
+
+    public override func toXmlString(): String {
+        return toXmlString(0)
+    }
+
+    public override func toXmlString(indent: Int64): String {
+        let sb = StringBuilder()
+        let space = "  " * indent
+        sb.append("${space}<?${this._content}")
+        for ((k, v) in attributes) {
+            let escapedValue = escapeXmlText(v)
+            sb.append(" ${k}=\"${escapedValue}\"")
+        }
+        sb.append("?>\n")
+        return sb.toString()
+    }
+
+}
+
+public class XmlDocTypeNode <: XmlNode {
+
+    private let _content: String
+    
+    public prop content: String {
+        get() {
+            return this._content
+        }
+    }
+    
+    public override prop innerText: String {
+        get() {
+            return ""
+        }
+    }
+
+    public init(content: String) {
+        this._content = content
+    }
+
+    public override func toXmlString(): String {
+        return "<!DOCTYPE ${_content}>"
+    }
+
+    public override func toXmlString(indent: Int64): String {
+        let space = "  " * indent
+        return "${space}<!DOCTYPE ${_content}>\n"
+    }
+
+}
+
+public class XmlDocument <: ToString {
+
+    public var root: XmlElementNode
+    public var header: ?XmlHeaderNode = None
+    public var docType: ?XmlDocTypeNode = None
+
+    public init(name: String) {
+        this.root = XmlElementNode(name)
+    }
+
+    public prop innerText: String {
+        get() {
+            return root.innerText
+        }
+    }
+
+    public func toXmlString(): String {
+        return toXmlString(0)
+    }
+
+    public func toXmlString(indent: Int64): String {
+        let sb = StringBuilder()
+        
+        if (let Some(h) <- header) {
+            sb.append(h.toXmlString(indent))
+        }
+        if (let Some(d) <- docType) {
+            sb.append(d.toXmlString(indent))
+        }
+        
+        sb.append(root.toXmlString(indent))
+        
+        return sb.toString()
+    }
+
+    public override func toString(): String {
+        return toXmlString()
     }
 
 }
@@ -178,7 +381,8 @@ public class XmlElementNode <: XmlNode {
 
         sb.append("${space}<${this._name}")
         for ((k, v) in attributes) {
-            sb.append(" ${k}=\"${v}\"")
+            let escapedValue = escapeXmlText(v)
+            sb.append(" ${k}=\"${escapedValue}\"")
         }
 
         if (children.size == 0) {
@@ -238,6 +442,244 @@ public class XmlElementNode <: XmlNode {
         }
 
         return el.name == criteria || criteria == "*"
+    }
+
+    public func appendChild(node: XmlNode): XmlElementNode {
+        children.add(node)
+        return this
+    }
+
+    public func prependChild(node: XmlNode): XmlElementNode {
+        let newChildren = ArrayList<XmlNode>()
+        newChildren.add(node)
+        for (child in children) {
+            newChildren.add(child)
+        }
+        this.children.clear()
+        for (child in newChildren) {
+            this.children.add(child)
+        }
+        return this
+    }
+
+    public func removeChild(node: XmlNode): Bool {
+        for (i in 0..children.size) {
+            if (matchNode(children[i], node)) {
+                children.remove(i..i+1)
+                return true
+            }
+        }
+        return false
+    }
+
+    public func removeChildAt(index: Int64): ?XmlNode {
+        if (index < 0 || index >= children.size) {
+            return None
+        }
+        let node = children[index]
+        children.remove(index..index+1)
+        return node
+    }
+
+    private func matchNode(a: XmlNode, b: XmlNode): Bool {
+        if (a is XmlTextNode && b is XmlTextNode) {
+            if (let Some(textA) <- (a as XmlTextNode)) {
+                if (let Some(textB) <- (b as XmlTextNode)) {
+                    return textA.content == textB.content
+                }
+            }
+        }
+        if (a is XmlElementNode && b is XmlElementNode) {
+            if (let Some(elemA) <- (a as XmlElementNode)) {
+                if (let Some(elemB) <- (b as XmlElementNode)) {
+                    return elemA.name == elemB.name
+                }
+            }
+        }
+        if (a is XmlCommentNode && b is XmlCommentNode) {
+            if (let Some(commentA) <- (a as XmlCommentNode)) {
+                if (let Some(commentB) <- (b as XmlCommentNode)) {
+                    return commentA.content == commentB.content
+                }
+            }
+        }
+        if (a is XmlHeaderNode && b is XmlHeaderNode) {
+            if (let Some(headerA) <- (a as XmlHeaderNode)) {
+                if (let Some(headerB) <- (b as XmlHeaderNode)) {
+                    return headerA.content == headerB.content
+                }
+            }
+        }
+        if (a is XmlDocTypeNode && b is XmlDocTypeNode) {
+            if (let Some(docTypeA) <- (a as XmlDocTypeNode)) {
+                if (let Some(docTypeB) <- (b as XmlDocTypeNode)) {
+                    return docTypeA.content == docTypeB.content
+                }
+            }
+        }
+        return false
+    }
+
+    public func getChildAt(index: Int64): ?XmlNode {
+        if (index < 0 || index >= children.size) {
+            return None
+        }
+        return children[index]
+    }
+
+    public func getChildren(): ArrayList<XmlNode> {
+        return children
+    }
+
+    public func getFirstChild(): ?XmlNode {
+        if (children.isEmpty()) {
+            return None
+        }
+        return children[0]
+    }
+
+    public func getLastChild(): ?XmlNode {
+        if (children.isEmpty()) {
+            return None
+        }
+        return children[children.size - 1]
+    }
+
+    public func hasChildren(): Bool {
+        return !children.isEmpty()
+    }
+
+    public func clearChildren(): XmlElementNode {
+        children.clear()
+        return this
+    }
+
+    public func removeAttribute(key: String): XmlElementNode {
+        attributes.remove(key)
+        return this
+    }
+
+    public func hasAttribute(key: String): Bool {
+        return attributes.contains(key)
+    }
+
+    public func getAttributes(): HashMap<String, String> {
+        return attributes
+    }
+
+    public func clone(): XmlElementNode {
+        let cloned = XmlElementNode(_name)
+        for ((k, v) in attributes) {
+            cloned.attributes[k] = v
+        }
+        for (child in children) {
+            if (child is XmlElementNode) {
+                if (let Some(element) <- (child as XmlElementNode)) {
+                    cloned.children.add(element.clone())
+                }
+            } else if (child is XmlTextNode) {
+                if (let Some(text) <- (child as XmlTextNode)) {
+                    cloned.children.add(XmlTextNode(text.content))
+                }
+            } else if (child is XmlCommentNode) {
+                if (let Some(comment) <- (child as XmlCommentNode)) {
+                    cloned.children.add(XmlCommentNode(comment.content))
+                }
+            } else if (child is XmlHeaderNode) {
+                if (let Some(header) <- (child as XmlHeaderNode)) {
+                    let newHeader = XmlHeaderNode(header.content)
+                    for ((k, v) in header.attributes) {
+                        newHeader.attributes[k] = v
+                    }
+                    cloned.children.add(newHeader)
+                }
+            } else if (child is XmlDocTypeNode) {
+                if (let Some(docType) <- (child as XmlDocTypeNode)) {
+                    cloned.children.add(XmlDocTypeNode(docType.content))
+                }
+            }
+        }
+        return cloned
+    }
+
+    public func hasChild(predicate: (XmlNode) -> Bool): Bool {
+        for (child in children) {
+            if (predicate(child)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    public func findChild(predicate: (XmlNode) -> Bool): ?XmlNode {
+        for (child in children) {
+            if (predicate(child)) {
+                return child
+            }
+        }
+        return None
+    }
+
+    public func findChildren(predicate: (XmlNode) -> Bool): ArrayList<XmlNode> {
+        let results = ArrayList<XmlNode>()
+        for (child in children) {
+            if (predicate(child)) {
+                results.add(child)
+            }
+        }
+        return results
+    }
+
+    public func replaceChild(oldNode: XmlNode, newNode: XmlNode): Bool {
+        for (i in 0..children.size) {
+            if (matchNode(children[i], oldNode)) {
+                children[i] = newNode
+                return true
+            }
+        }
+        return false
+    }
+
+    public func insertBefore(referenceNode: XmlNode, newNode: XmlNode): Bool {
+        for (i in 0..children.size) {
+            if (matchNode(children[i], referenceNode)) {
+                let newChildren = ArrayList<XmlNode>()
+                for (j in 0..i) {
+                    newChildren.add(children[j])
+                }
+                newChildren.add(newNode)
+                for (j in i..children.size) {
+                    newChildren.add(children[j])
+                }
+                this.children.clear()
+                for (child in newChildren) {
+                    this.children.add(child)
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    public func insertAfter(referenceNode: XmlNode, newNode: XmlNode): Bool {
+        for (i in 0..children.size) {
+            if (matchNode(children[i], referenceNode)) {
+                let newChildren = ArrayList<XmlNode>()
+                for (j in 0..i + 1) {
+                    newChildren.add(children[j])
+                }
+                newChildren.add(newNode)
+                for (j in i + 1..children.size) {
+                    newChildren.add(children[j])
+                }
+                this.children.clear()
+                for (child in newChildren) {
+                    this.children.add(child)
+                }
+                return true
+            }
+        }
+        return false
     }
 
 }

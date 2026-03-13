@@ -3,7 +3,7 @@
   name = "slowxml"
   organization = ""
   description = "使用仓颉编写的轻量化 XML 解析库。"
-  version = "1.0.2"
+  version = "1.0.3"
   target-dir = ""
   script-dir = ""
   output-type = "static"

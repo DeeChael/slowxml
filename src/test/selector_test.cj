@@ -30,7 +30,7 @@ func testSelector() {
     </UIContainer>
     """
 
-    let root = XmlParser(viewXml).parse().getOrThrow()
+    let root = XmlParser.default().parse(viewXml).getOrThrow().root
     
     let backBtn = root.select("#back_btn")
     @Expect(backBtn?.attr("class"), "icon primary")

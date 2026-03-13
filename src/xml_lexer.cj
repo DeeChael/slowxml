@@ -44,25 +44,46 @@ public class XmlLexer {
 
                 if (nextC == r'?') {
                     consume()
-                    readUntil(r"?")
+                    let content = readUntil(r"?")
                     if (peek() != r">") {
                         return XmlToken.Error("Expect '>'")
                     }
                     consume()
                     isInTag = false
-                    return XmlToken.Skipable
+                    let headerContent = content.trimAscii()
+                    return XmlToken.Header(headerContent)
                 }
 
                 if (nextC == r'!') {
                     consume()
                     if (peek() == r'-') {
-                            isInTag = false
-                            return XmlToken.Skipable
-
+                        consume()
+                        if (peek() == r'-') {
+                            consume()
+                            let content = readUntil(r"-")
+                            if (peek() == r'-') {
+                                consume()
+                                if (peek() == r'>') {
+                                    consume()
+                                    isInTag = false
+                                    return XmlToken.Comment(content)
+                                }
+                            }
+                        }
+                        isInTag = false
+                        return XmlToken.Skipable
                     }
-                    readUntil(r">")
+                    let firstChar = peek()
+                    if (firstChar == r'D' || firstChar == r'd') {
+                        consume()
+                        let rest = readUntil(r">")
+                        let fullContent = "D${rest}"
+                        isInTag = false
+                        return XmlToken.DocType(fullContent.trimAscii())
+                    }
+                    let content = readUntil(r">")
                     isInTag = false
-                    return XmlToken.Skipable
+                    return XmlToken.Header(content)
                 }
 
                 isInTag = true
@@ -133,7 +154,7 @@ public class XmlLexer {
             }
             sb.append(consume())
         }
-        return sb.toString()
+        return unescapeXmlText(sb.toString())
     }
 
     private func readUntil(target: Rune): String {

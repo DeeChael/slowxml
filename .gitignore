@@ -4,3 +4,4 @@ target/
 
 cjpm.lock
 *.cj.macrocall
+src/main.cj
