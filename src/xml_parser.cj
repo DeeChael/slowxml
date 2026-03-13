@@ -60,9 +60,15 @@ public class XmlParser {
             match (currentToken) {
                 case XmlToken.Header(content) =>
                     if (parseHeader) {
-                        let header = XmlHeaderNode(content)
-                        parseHeaderAttributes(header, content)
-                        doc.header = Some(header)
+                        let (version, encoding, standalone) = _parseDeclContent(content)
+                        let decl = XmlDeclNode(version)
+                        if (encoding != "UTF-8") {
+                            decl.setEncoding(encoding)
+                        }
+                        if (let Some(stand) <- standalone) {
+                            decl.setStandalone(stand)
+                        }
+                        doc.decl = Some(decl)
                     }
                     currentToken = lexer.nextToken()
                 case XmlToken.DocType(content) =>
@@ -95,7 +101,13 @@ public class XmlParser {
                     currentToken = lexer.nextToken()
                 case XmlToken.StartTag(name) =>
                     let (element, nextToken) = parseElement(name, lexer, currentToken)
-                    rootElement = Some(element)
+                    if (rootElement.isNone()) {
+                        rootElement = Some(element)
+                    } else {
+                        if (let Some(root) <- rootElement) {
+                            root.children.add(element)
+                        }
+                    }
                     currentToken = nextToken
                 case XmlToken.EOF => break
                 case _ => 
@@ -104,17 +116,21 @@ public class XmlParser {
         }
 
         if (let Some(root) <- rootElement) {
-            doc.root = root
+            doc.rootElement = root
         }
         
-        if (doc.root.name.isEmpty() && doc.root.children.isEmpty()) {
+        if (doc.rootElement.name.isEmpty() && doc.rootElement.children.isEmpty()) {
             return None
         }
         
         return Some(doc)
     }
 
-    private func parseHeaderAttributes(header: XmlHeaderNode, content: String): Unit {
+    private func _parseDeclContent(content: String): (String, String, ?Bool) {
+        var version = "1.0"
+        var encoding = "UTF-8"
+        var standalone: ?Bool = None
+        
         let parts = content.split(" ")
         if (parts.size > 1) {
             for (i in 1..parts.size) {
@@ -129,21 +145,34 @@ public class XmlParser {
                     if (value.startsWith('"') && value.endsWith('"')) {
                         value = value[1..value.size - 1]
                     }
-                    if (value.startsWith("'") && value.endsWith("'")) {
-                        value = value[1..value.size - 1]
+                    if (key == "version") {
+                        version = value
+                    } else if (key == "encoding") {
+                        encoding = value
+                    } else if (key == "standalone") {
+                        standalone = Some(value == "yes")
                     }
-                    if (autoEscape) {
-                        value = unescapeXmlText(value)
-                    }
-                    header.attr(key, value)
                 }
             }
         }
+        
+        return (version, encoding, standalone)
     }
 
     private func parseElement(name: String, lexer: XmlLexer, currentToken: XmlToken): (XmlElementNode, XmlToken) {
         let element = XmlElementNode(name)
         var token = currentToken
+
+        match (token) {
+            case XmlToken.SelfClosing =>
+                let nextToken = lexer.nextToken()
+                return (element, nextToken)
+            case XmlToken.TagEnd =>
+                let nextToken = lexer.nextToken()
+                token = nextToken
+            case _ => 
+                token = lexer.nextToken()
+        }
 
         while (true) {
             match (token) {
@@ -163,7 +192,6 @@ public class XmlParser {
                     token = lexer.nextToken()
                     return (element, token)
                 case _ => 
-                    token = lexer.nextToken()
                     break
             }
         }
@@ -185,9 +213,15 @@ public class XmlParser {
 
                 case XmlToken.Header(content) =>
                     if (parseHeader) {
-                        let header = XmlHeaderNode(content)
-                        parseHeaderAttributes(header, content)
-                        element.children.add(header)
+                        let (version, encoding, standalone) = _parseDeclContent(content)
+                        let decl = XmlDeclNode(version)
+                        if (encoding != "UTF-8") {
+                            decl.setEncoding(encoding)
+                        }
+                        if (let Some(stand) <- standalone) {
+                            decl.setStandalone(stand)
+                        }
+                        element.children.add(decl)
                     }
                     token = lexer.nextToken()
 

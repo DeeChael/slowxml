@@ -130,14 +130,27 @@ public class XmlCommentNode <: XmlNode {
 
 }
 
-public class XmlHeaderNode <: XmlNode {
+public class XmlDeclNode <: XmlNode {
 
-    private let _content: String
-    public let attributes: HashMap<String, String> = HashMap<String, String>()
+    private let _version: String
+    private var _encoding: String = "UTF-8"
+    private var _standalone: ?Bool = None
     
-    public prop content: String {
+    public prop version: String {
         get() {
-            return this._content
+            return this._version
+        }
+    }
+    
+    public prop encoding: String {
+        get() {
+            return this._encoding
+        }
+    }
+    
+    public prop standalone: ?Bool {
+        get() {
+            return this._standalone
         }
     }
     
@@ -147,16 +160,18 @@ public class XmlHeaderNode <: XmlNode {
         }
     }
 
-    public init(content: String) {
-        this._content = content
+    public init(version: String) {
+        this._version = version
     }
 
-    public func attr(key: String): String {
-        attributes.get(key).getOrDefault { "" }
+    public func setEncoding(enc: String): XmlDeclNode {
+        this._encoding = enc
+        return this
     }
 
-    public func attr(key: String, value: String) {
-        attributes[key] = value
+    public func setStandalone(stand: Bool): XmlDeclNode {
+        this._standalone = Some(stand)
+        return this
     }
 
     public override func toXmlString(): String {
@@ -166,10 +181,9 @@ public class XmlHeaderNode <: XmlNode {
     public override func toXmlString(indent: Int64): String {
         let sb = StringBuilder()
         let space = "  " * indent
-        sb.append("${space}<?${this._content}")
-        for ((k, v) in attributes) {
-            let escapedValue = escapeXmlText(v)
-            sb.append(" ${k}=\"${escapedValue}\"")
+        sb.append("${space}<?xml version=\"${_version}\" encoding=\"${_encoding}\"")
+        if (let Some(stand) <- _standalone) {
+            sb.append(" standalone=\"${if (stand) { "yes" } else { "no" }}\"")
         }
         sb.append("?>\n")
         return sb.toString()
@@ -210,17 +224,23 @@ public class XmlDocTypeNode <: XmlNode {
 
 public class XmlDocument <: ToString {
 
-    public var root: XmlElementNode
-    public var header: ?XmlHeaderNode = None
+    protected var rootElement: XmlElementNode
+    public var decl: ?XmlDeclNode = None
     public var docType: ?XmlDocTypeNode = None
 
     public init(name: String) {
-        this.root = XmlElementNode(name)
+        this.rootElement = XmlElementNode(name)
+    }
+
+    public prop root: XmlElementNode {
+        get() {
+            return rootElement
+        }
     }
 
     public prop innerText: String {
         get() {
-            return root.innerText
+            return rootElement.innerText
         }
     }
 
@@ -231,14 +251,14 @@ public class XmlDocument <: ToString {
     public func toXmlString(indent: Int64): String {
         let sb = StringBuilder()
         
-        if (let Some(h) <- header) {
-            sb.append(h.toXmlString(indent))
-        }
-        if (let Some(d) <- docType) {
+        if (let Some(d) <- decl) {
             sb.append(d.toXmlString(indent))
         }
+        if (let Some(t) <- docType) {
+            sb.append(t.toXmlString(indent))
+        }
         
-        sb.append(root.toXmlString(indent))
+        sb.append(rootElement.toXmlString(indent))
         
         return sb.toString()
     }
@@ -503,10 +523,10 @@ public class XmlElementNode <: XmlNode {
                 }
             }
         }
-        if (a is XmlHeaderNode && b is XmlHeaderNode) {
-            if (let Some(headerA) <- (a as XmlHeaderNode)) {
-                if (let Some(headerB) <- (b as XmlHeaderNode)) {
-                    return headerA.content == headerB.content
+        if (a is XmlDeclNode && b is XmlDeclNode) {
+            if (let Some(declA) <- (a as XmlDeclNode)) {
+                if (let Some(declB) <- (b as XmlDeclNode)) {
+                    return declA.version == declB.version
                 }
             }
         }
@@ -585,13 +605,16 @@ public class XmlElementNode <: XmlNode {
                 if (let Some(comment) <- (child as XmlCommentNode)) {
                     cloned.children.add(XmlCommentNode(comment.content))
                 }
-            } else if (child is XmlHeaderNode) {
-                if (let Some(header) <- (child as XmlHeaderNode)) {
-                    let newHeader = XmlHeaderNode(header.content)
-                    for ((k, v) in header.attributes) {
-                        newHeader.attributes[k] = v
+            } else if (child is XmlDeclNode) {
+                if (let Some(decl) <- (child as XmlDeclNode)) {
+                    let newDecl = XmlDeclNode(decl.version)
+                    if (decl.encoding != "UTF-8") {
+                        newDecl.setEncoding(decl.encoding)
                     }
-                    cloned.children.add(newHeader)
+                    if (let Some(stand) <- decl.standalone) {
+                        newDecl.setStandalone(stand)
+                    }
+                    cloned.children.add(newDecl)
                 }
             } else if (child is XmlDocTypeNode) {
                 if (let Some(docType) <- (child as XmlDocTypeNode)) {
